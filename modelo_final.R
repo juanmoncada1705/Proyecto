@@ -1,5 +1,12 @@
 #Modelo de prediccion de precio de computadores.
 #Predicción del precio de los computadores según la disposición del hardware 
+install.packages("dplyr")
+install.packages("ggplot1")
+install.packages("car")
+install.packages("lmtest")
+install.packages("nortest")
+install.packages("Metrics")
+
 
 library(dplyr)
 library(ggplot2)
