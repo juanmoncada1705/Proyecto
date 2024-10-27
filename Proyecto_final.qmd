@@ -1,0 +1,368 @@
+---
+title: "Predicción del precio de los computadores según la disposición del hardware"
+author: "Juan Pablo Moncada, Samuel Muñoz y Juliana Agudelo"
+lang: es
+theme: lumen
+format: 
+  html: 
+    toc: true
+    toc-location: left
+    number-sections: true
+editor: visual
+bibliography: references.biba
+---
+
+```{r include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+## Resumen
+
+En este estudio, se llevó a cabo un análisis predictivo sobre los precios de computadoras portátiles en función de diversos factores de hardware, como el modelo, alamcenamiento, bateria, el peso, el procesador, la garantia, en otras. Utilizando un conjunto de datos extraído de especificaciones técnicas y precios de varios modelos de portátiles, se implementó un modelo de regresión en R Studio para predecir el precio de los equipos. Esto, con el fin de ayudar a mejorar la toma de decisiones tanto para los fabricantes como para los consumidores, al proporcionar una estimación más precisa de los precios en función de las especificaciones técnicas.
+
+## Introduccion
+
+En la actualidad, los ordenadores portátiles han adquirido una importancia crucial, sirviendo a diversos sectores como el académico, el laboral y el entretenimiento. La evolución de los componentes de hardware y la rápida innovación tecnológica han generado un mercado dinámico, donde el precio de estos dispositivos depende de múltiples factores.
+
+Este trabajo busca desarrollar un modelo de predicción que permita estimar el precio de un computador portátil en función de sus características técnicas, utilizando herramientas de análisis estadístico. El objetivo es proporcionar una herramienta que, basada en datos, facilite la estimación de precios, lo cual podría ser útil tanto para consumidores como para empresas del sector tecnológico.
+
+## Preguntas de investigacion
+
+¿Cómo influyen las caracteristicas físicas de un computador en su precio?
+
+¿Hay alguna relación significativa entre el precio del dispositivo y el procesador con el que cuenta?
+
+¿Es verdad que los dispositivos con más ram son menos accesibles economicamente?
+
+## Objetivos
+
+### Objetivo general
+
+Analizar el impacto de las características físicas de los computadores portátiles en su precio, utilizando técnicas de análisis de datos y modelos predictivos que permitan identificar los factores de hardware más determinantes en la variación de los costos.
+
+### Objetivos especificos
+
+1.  Evaluar la relación entre el tipo de procesador y el precio del ordenador portátil, identificando si existe una correlación significativa entre ambos factores.
+
+2.  Determinar cómo influye la cantidad de memoria RAM en el precio de los ordenadores portátiles, verificando si los dispositivos con mayor RAM presentan una tendencia a ser más accesibles económicamente.
+
+3.  Analizar el impacto de la marca en el precio de los computadores portátiles, identificando si el nombre de la marca genera diferencias significativas en los costos.
+
+## Variables
+
+El conjunto de datos que se analizaron corresponde a 3000 observaciones y 12 variables, de las cuales 9 son cualitativas y 3 cuantitativas. La @tbl-Tabla1 presenta la clasificacion de las variables.
+
+| Variable       | Tipo         |
+|----------------|--------------|
+| Brand          | Cualitativo  |
+| Modelo         | Cualitativo  |
+| Procesador     | Cualitativo  |
+| Ram            | Cualitativo  |
+| Almacenamiento | Cualitativo  |
+| Ssize          | Cualitativo  |
+| Grafica        | Cualitativo  |
+| SO             | Cualitativo  |
+| Peso           | Cuantitativo |
+| Bateria        | Cuantitativo |
+| Precio         | Cuantitativo |
+| Garantia       | Cualitativo  |
+
+: Clasificacion de variables {#tbl-Tabla1}
+
+## Analisis exploratorio de las variables
+
+### Relacion entre el precio y el espacio
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(car)
+library(lmtest)
+library(nortest)
+library(Metrics)
+library(readr)
+dato<- read_csv("https://raw.githubusercontent.com/juanmoncada1705/Proyecto/refs/heads/main/lap.csv")
+```
+
+```{r}
+#| label: fig-pe
+#| fig-cap: "Análisis exproratorio entre el precio y espacio"
+library(dplyr)
+dato<-dato%>%rename(Ram= `RAM (GB)`,Espacio= `Storage (GB)`,Precio= `Price ($)`, Ssize=`Screen Size (inches)`,Peso=`Weight (kg)`, Bateria= `Battery Life (hours)`, Garantia = `Warranty (years)`, Grafica = `Graphics Card`, SO = `Operating System`)
+boxplot(Precio~Espacio, data=dato)
+```
+
+Al analizar la gráfica, se observa que, aunque los dispositivos con 2048GB de almacenamiento, que representan la capacidad máxima, tienen un precio promedio más alto, las diferencias en los precios no muestran grandes fluctuaciones en función del aumento del espacio de almacenamiento. Esto sugiere que el precio no escala de manera proporcional al incremento de la capacidad de almacenamiento.
+
+### Relacion entre el precio y el Brand (marca)
+
+```{r}
+#| label: fig-pbr
+#| fig-cap: "Análisis exproratorio entre el precio y la marca"
+boxplot(Precio~Brand, data=dato)
+```
+
+Al comparar los precios de las computadoras según la marca, se observa que Lenovo, MSI, Razer y Dell presentan un rango de precios bastante similar, con Lenovo ofreciendo un precio promedio ligeramente inferior en comparación con las otras marcas. Por otro lado, en el caso de Apple, Asus y HP, Asus destaca por tener el precio promedio más alto y un rango de variación más estrecho Finalmente, Acer se posiciona como la marca con el precio promedio más bajo, lo que la convierte en una opción más accesible. dentro del análisis.
+
+### Relacion entre el precio y el procesador
+
+```{r}
+#| label: fig-ppr
+#| fig-cap: "Análisis exproratorio entre el precio y el procesador"
+boxplot(Precio~Processor, data=dato)
+```
+
+De la anterior grafica podemos ver como el tipo de procesador no afecta significativamente el precio de los computadores, esto dado que los precios promedio para cada tipo de procesador son muy similares.
+
+### Relacion entre el precio y el Ram
+
+```{r}
+#| label: fig-pr
+#| fig-cap: "Análisis exproratorio entre el precio y el ram"
+boxplot(Precio~Ram, data=dato)
+```
+
+En promedio los precios varían entre las 4 diferentes categorías de espacio el cual se mide en GB. Los computadores de 256 GB tienen la media más alta con 1806.23, mientras que los de 512 GB poseen el promedio más bajo con 1749.64\$. Aunque se esperaría que los precios aumenten con el tamaño, la media de los computadores de 512 GB indica lo contrario.
+
+### Relacion entre el precio y el tamaño de la pantalla
+
+```{r}
+#| label: fig-ps
+#| fig-cap: "Análisis exproratorio entre el precio y el tamaño de la pantalla"
+boxplot(Precio~Ssize, data=dato)
+```
+
+La relación de los precios varía con el tamaño de la pantalla. El tamaño de 13.3 pulgadas tiene la media más alta, con 1802.48, mientras que el de 15.6 muestra la media más baja, con 1753.87. Esto sugiere que la percepción del valor no siempre se alinea con el tamaño, y que características como la marca, la ram o u otros factores explican mejor el Precio.
+
+### Relacion entre el precio y la grafica
+
+```{r}
+#| label: fig-pg
+#| fig-cap: "Análisis exproratorio entre el precio y la grafica"
+boxplot(Precio~Grafica, data=dato)
+```
+
+La media de precios varía entre las 5 diferentes tarjetas gráficas. La Intel UHD con 1801.26, seguida de NVIDIA RTX 3060 con 1799.10\$. Luego está AMD Radeon con 1779.08, seguida de NVIDIA GTX 1650 con 1782.78\$. Finalmente, la más baja es NVIDIA RTX 3070 con 1743.15\$.
+
+### Relacion entre el precio y el sistema operativo
+
+```{r}
+#| label: fig-pso
+#| fig-cap: "Análisis exproratorio entre el precio y la grafica"
+boxplot(Precio~SO, data=dato)
+```
+
+Este grafico nos muestra la relación entre el sistema operativo y el precio del equipo, donde se puede evidenciar que la media de los precios para todos los sistemas operativos son valores muy cercanos, esto nos puede indicar que el sistema operativo podría no ser una variable muy significativa a la hora de explicar la razón del precio de un computador portátil con su sistema operativo.
+
+### Relacion entre el precio y el peso
+
+```{r}
+#| label: fig-PP
+#| fig-cap: "Análisis exproratorio entre el precio y el peso"
+plot(Precio~Peso, data=dato)
+```
+
+En esta grafica se puede ver una gran dispersión de los datos, lo cual sugiere que la variable precio difícilmente es explicada por el peso del equipo, si bien esto es algo que puede ser intuitivo porque los materiales varían según el modelo y componentes, también puede existir una relación en cuanto a la calidad del producto y su precio, sin embargo, este grafico no provee dicha información y para dicho análisis se dispondrá del estudio de un modelo.
+
+### Relacion entre el precio y la bateria
+
+```{r}
+#| label: fig-PB
+#| fig-cap: "Análisis exproratorio entre el precio y la bateria"
+plot(Precio~Bateria, data=dato)
+```
+
+Similar al caso anterior, este grafico no muestra una relación clara entre el precio y la batería del equipo, lo que sugiere que dichas variables no están correlacionadas. En este caso se podría estimar que mientras mayor cantidad de batería disponga el dispositivo de mayor calidad podrán ser los componentes gracias al mayor gasto energético que estos producen con respecto a componentes de gamas inferiores.
+
+### Relacion entre el precio y la garantia
+
+```{r}
+#| label: fig-PG
+#| fig-cap: "Análisis exproratorio entre el precio y la garantia"
+boxplot(Precio~Garantia,data=dato) 
+```
+
+El grafico muestra 3 cajas de bigotes comparativos que presentan valores promedio muy similares entre sí de aproximadamente \$1800 para cada garantía, esto sugiere que la garantía no necesariamente es una variable que pueda explicar el aumento o disminución del precio del equipo.
+
+## Modelo
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(car)
+library(lmtest)
+library(Metrics)
+dato$Ram<-as.factor(dato$Ram)
+dato$Ssize<-as.factor(dato$Ssize)
+dato$Garantia<-as.factor(dato$Garantia)
+dato$Espacio<-as.factor(dato$Espacio)
+
+hardware<-dato[,-c(2)]
+m21 <- lm(Precio ~ Ram + Processor + SO + Garantia + Bateria, data = hardware)
+```
+
+Despues de realizar varios modelos pudimos notar como ninguno cumplia en totalidad con todos los criterios para ser un modelo totalmente efectivo en la interpretacion de relaciones y en la prediccion de resultados, sin embargo, en esta ocasión se escogió el siguiente modelo de regresión pues fue el que cumplio con gran parte de estos criterios.
+
+m21 \<- lm(Precio \~ Ram + Processor + SO + Garantia + Bateria, data = hardware)
+
+```{r}
+m21 <- lm(Precio ~ Ram + Processor + SO + Garantia + Bateria, data = hardware)
+```
+
+Este modelo permite explicar el precio de ordenadores portátiles en función de cinco variables clave: RAM, procesador, sistema operativo, garantía y batería. En primer lugar, la memoria RAM es esencial para el rendimiento del equipo; una mayor cantidad de RAM permite un procesamiento más ágil y capacidad multitarea, lo cual podría generar un incremento de precio. El procesador también es un factor determinante, pues impacta directamente en la potencia y eficiencia del equipo, y los procesadores de gama alta suelen elevar el valor final del producto. El sistema operativo (SO) es otra variable relevante, ya que algunos sistemas operativos pueden ser más costosos y exclusivos, agregando valor al equipo. La garantía también suele afectar el precio: una cobertura de garantía extendida generalmente se asocia a una mayor confiabilidad y respaldo de la marca, lo cual podría incrementar el precio. Por último, la batería también puede influir significativamente en el precio, especialmente en equipos donde una duración prolongada es una característica deseable y diferenciadora.
+
+Una vez escogido el modelo pasamos a hacer un resumen de este por medio del:
+
+summary(m21)
+
+```{r}
+summary(m21)
+```
+
+En este resumen nos encontraremos con:
+
+1\. Intercepto y Coeficientes : Cada coeficiente estimado muestra el cambio promedio en el precio (variable dependiente) asociado con una unidad de incremento en la variable correspondiente, manteniendo las demás constantes.
+
+2\. Valores p (Pr(\>\|t\|)) : Estos valores indican la significancia estadística de cada variable independiente en el modelo. En general, un valor p menor a 0.05 sugiere que la variable es significativa para predecir el precio.En este caso como la base de datos presenta valores muy homogeneos solo sugieres que la garantia 2 y el precio son significativos.
+
+3\. Error Estándar : Este valor mide la precisión de la estimación de cada coeficiente. Coeficientes con errores estándar pequeños sugieren que la estimación es precisa.
+
+4\. R-cuadrado (R²) : Este indicador muestra la proporción de la variabilidad en el precio que el modelo puede explicar. Cuanto más cerca esté de 1, mayor será la capacidad del modelo para predecir el precio, sugiriendo un buen ajuste del modelo. En este caso es bastante bajo, 0.005873, lo cual era de esperarse gracias al analisis exploratorio hecho anteriormente en donde se noto que ninguna variable explicaba satisfactoriamente el precio del equipo.
+
+5\. R-cuadrado Ajustado : A diferencia del R², esta medida ajusta el valor teniendo en cuenta el número de variables en el modelo que para este modelo es del 0.001211
+
+### Análisis de multicolinealidad
+
+La multicolinealidad ocurre cuando hay una relación lineal fuerte entre las variables independientes.La multicolinealidad puede llevar a estimaciones inexactas de los coeficientes de regresión, lo que puede hacer que sean muy sensibles a pequeños cambios en los datos. Existen varias técnicas para detectar la multicolinealidad, en este caso usamos el factor de inflación de la varianza (VIF) este es un valor que indica cuánto se incrementa la varianza de un coeficiente debido a la multicolinealidad.Un VIF mayor a 5 sugiere problemas significativos de esta.
+
+```{r}
+vif(m21)
+```
+
+En el caso de este modelo, no presenta mulcolinealidad.
+
+### Analisis residual
+
+#### Normalidad
+
+Para que los resultados del modelo sean válidos y las inferencias estadísticas sean precisas los residuos deben seguir una distribución normal.Esto lo podemos ver por medio de diferentes pruebas estadisticas, en este caso usamos la prueba de Shapiro-Wilk
+
+```{r}
+shapiro.test(m21$residuals)
+```
+
+La cual nos arrojo como resultado que los residales no siguen una distribucion normal, esto se pudo ver por medio del valor-p.Como se menciono anteriormente se probaron varios modelos, de los cuales ninguno prentaba normalidad, se hizo un estudio de transformacion de variables en donde se procesaron algunas variables con las funciones log y sqrt, sin embargo, este ultimo paso no presento cambios en el modelo.
+
+#### Homocedasticidad
+
+La homocedasticidad hace referencia a que los residuales tengan una varianza constante, en caso de que no lo sean esto podria afectar la validez de los resultados del modelo. Para detectar si los residuales presentan homocedasticidad existen direfentes alternativas como los graficos de dispersion o algunas pruebas estadisticas. En este caso hicimos uso de la prueba de Breusch-Pagan
+
+```{r}
+bptest(m21)
+```
+
+Esta prueba nos indico que en el modelo que escojimos los residuales si presentan homocedasticidad.
+
+#### Independencia
+
+La independencia de los residuos hace referencia a que los residuales del modelo no están correlacionados entre sí. Lo cual indica que el error de predicción en un punto de datos no debe influir en el error de predicción en otro punto de datos. Para detectar esta indeoendecia se pueden realizar diferentes pruebas o graficos, en este caso usamos la prueba Durbin-Watson
+
+```{r}
+dwtest(m21)
+```
+
+Esta prueba nos muestra que los residuales en este modelo si son independientes.
+
+#### Puntos de influencia
+
+Los puntos de influencia son datos atípicos que, al ser incluidos o excluidos en el análisis, afecta de manera significativa los resultados del modelo. Estos puntos pueden ser tanto valores atípicos como puntos que están en el rango normal pero que, por su posición, tienen una gran influencia sobre el ajuste del modelo. Existen varios metodos para identicar estos puntos de influencia como Cook's Distance o DFITS. Para realizar este analisis se realizo el siguiente codigo:
+
+influencia21 \<- influence.measures(m21)
+
+cooks_distances \<- influencia21\$infmat\[, "cook.d"\]
+
+umbral \<- 4 / length(cooks_distances)
+
+indices_influencia \<- which(cooks_distances \> umbral)
+
+hardware_sin_influencia \<- hardware\[-indices_influencia, \] print(hardware_sin_influencia)
+
+if (length(indices_influencia) \> 0) { hardware_sin_influencia \<- hardware\[-indices_influencia, \] } else { hardware_sin_influencia \<- hardware }
+
+Este codigo se encarga de parametrizar los puntos de influencia y eliminarlos creando un nuevo dataframe. En este modelo notamos que el valor del umbral es 0.001333333, lo que corresponde a un valor mucho mas grande en comparación a las distancias de cook, lo cual representa un problema porque se eliminan todas las observaciones en la base de datos, se realizo el mismo estudio para otros modelo y sucedia los mismo; es por esto que nos permitimos agregar condicionales para que esto no sucediera, por lo que el proposito que se tenia era eliminar algunas observaciones, no todas.
+
+### Seleccion de variables
+
+El step-wise es una función que nos ayuda a evaluar los diferentes modelos y la relación que tienen sus variables en aras de explicar la variable respuesta, es por esto que nos permitimos usar esta función para evaluar la complejidad de este modelo y espiar las posibles soluciones que el mismo posee.
+
+```{r}
+modf2 <- step(m21, trace = T, direction = "both")
+modf2
+```
+
+En los resultados presentados se puede apreciar 6 iteraciones en donde la función va descartando variables con la funcionalidad de minimizar el AIC, el cual evalúa la calidad relativa de los modelos estadísticos. Nótese que en la primera iteración en donde el modelo está completo se obtiene un valor de 39486.78 lo que quiere decir que el modelo no es satisfactorio y se deben eliminar variables, de forma tal que se llegue a un valor lo más cercano a cero posible, ahora que se elimina la variable “Processor” en la segunda iteración se obtiene un valor de 39481.44 y similarmente para el resto de iteración hasta alcanzar la sexta iteración, en donde se obtiene un valor para el AIC de 39475.68, la peculiaridad en este resultado radica en la diferencia que hay entre la primera iteración y la última es de 11,1, adicionalmente, se puede apreciar que se eliminaron todas las variables salvo garantia, quedando el modelo como “Precio \~ Garantia” , lo cual sugiere que el modelo en cuestión y las variables involucradas no explican la variable respuesta tal como se estimaba en el análisis exploratorio. Debido a esto nos quedamos con el modelo inicial, ya que el AIC no presenta cambios importantes en el resultado del modelo y consideramos que las variables elegidas son esenciales para explicar la variable respuesta.
+
+### Validacion del modelo
+
+Para la validación del modelo, se emplearon conjuntos de entrenamiento y prueba, utilizando 2400 observaciones para el entrenamiento y 600 observaciones para la prueba. El conjunto de entrenamiento permitió al modelo aprender los patrones en los datos, mientras que el conjunto de prueba sirvió para evaluar qué tan bien generalizaba el modelo en datos nuevos.
+
+```{r}
+set.seed(123)
+
+sample <- sample.int(n = nrow(dato), size = floor(0.80*nrow(dato)), replace = F)
+train <- dato[sample, ] #División de datos entre entrenamiento y pruebas
+test <- dato[-sample,]
+
+#Modelo de entrenamiento; Para comprobar el modelo
+modelotreaning <- lm(formula = Precio~Ram+Processor+SO+Garantia+Bateria, data = train)
+
+
+#Se revisan en el both step o back no en el de entrenamiento 
+
+#Modelo de prueba: Para evaluar el rendimiento del modelo  
+modelotesting <- lm(formula =Precio~Ram+Processor+SO+Garantia+Bateria, data = test)
+prediccion <- predict.lm(modelotesting, data = test[, c("Ram","Garantia","Bateria","SO","Processor")])
+
+
+
+plot(test$Precio, prediccion)
+abline(modelotesting)
+
+modelotesting <- lm(formula = Precio ~ Ram+Processor+SO+Garantia+Bateria , data = test)
+prediccion <- predict.lm(modelotesting, data = test)
+
+
+library(Metrics)
+metricas <- c(mae(test$Precio, prediccion),
+              mape(test$Precio, prediccion),
+              mse(test$Precio, prediccion),
+              rmse(test$Precio, prediccion),
+              AIC(modelotesting),
+              BIC(modelotesting),
+              summary(modelotesting)$r.squared)
+
+names(metricas) <- c("Mae", "Mape", "Mse", "Rmse", "AIc", "BIC","R^2")
+metricas
+
+```
+
+Al revisar los valores obtenidos, encontramos que el modelo, después del proceso de entrenamiento y validación, presenta un error porcentual del 45.82%. Esto indica que el modelo no cumple con la premisa de investigación, ya que no es capaz de explicar adecuadamente la variable de respuesta. Esto podría deberse a la simplicidad del modelo, al sobreajuste de sus parámetros, a la falta de normalidad en los datos, o a la complejidad inherente de la base de datos.
+
+Para obtener mejores resultados, sería necesario cambiar el modelo o ajustar el modelo actual, incluyendo ajustes en las observaciones para lograr una distribución más normal en los datos y mejorar así el rendimiento del modelo.
+
+## Conclusiones
+
+Una vez finalizado el estudio del modelo y con todos los datos recolectados es importante para nosostros concluir sobre las preguntas de investigacion propuestas en este trabajo academico.
+
+1.  A partir del estudio relizado notamos que ninguna variable explica significativamente el precio del ordenador. Desde el analisis exploratorio se podia notar como ninguna variable tenia una relacion fuerte con el precio, esto tambien puede explicarse por la simplicidad del modelo y la homogeneidad de los datos.
+
+<!-- -->
+
+2.  Pese a que se esperaba que variables como el procesador afectara el precio del ordenador nos dimos cuenta que el modelo no presentaba dicha caracteristica, lo cual no ocurre en la vida real porque normalmente mientras mejor sea el procesador, mayor sera el costo del equipo, esto debido a la complejidad en la creacion de los chips y el overclocking del mismo.
+
+<!-- -->
+
+3.  Al igual que con el procesador, se esperaba que la ram fuese un factor critico en cuanto a la variabilidad del precio del ordenador. Sin embargo, este no fue el caso, lob cual es bastante alejado de la realidad, puesto que esta variable define la velocidad y capacidad de multi-tasking del dispositivo.
+
+[@dplyr; @ggplot2; @car; @lmtest; @nortest; @Metrics]
